@@ -26,7 +26,7 @@ struct Level {
     float side_padding;
     float bricks_padding;
     u8 bricks_count;
-    u8 breakable_bricks_count;
+    u8 starting_bricks_remaining, bricks_remaining;
 
     Level(char *map, Brick *bricks,
           vec2 scale = {DEFAULT_SCALE_X, DEFAULT_SCALE_Y},
@@ -51,7 +51,7 @@ struct Level {
         float top = scale.y * 2 - top_padding - 1;
         vec2 brick_position{left, top};
 
-        breakable_bricks_count = 0;
+        starting_bricks_remaining = 0;
         bricks_count = 0;
         Brick *brick = bricks;
         while (*brick_char) {
@@ -65,19 +65,19 @@ struct Level {
                     *brick = Brick::Moving(brick_position);
                     brick++;
                     bricks_count++;
-                    breakable_bricks_count++;
+                    starting_bricks_remaining++;
                     break;
                 case STRONG_BRICK_CHAR:
                     *brick = Brick::Strong(brick_position);
                     brick++;
                     bricks_count++;
-                    breakable_bricks_count++;
+                    starting_bricks_remaining++;
                     break;
                 case BRICK_CHAR:
                     *brick = Brick{brick_position};
                     brick++;
                     bricks_count++;
-                    breakable_bricks_count++;
+                    starting_bricks_remaining++;
                     break;
             }
             if (*brick_char == '\n') {
@@ -87,23 +87,13 @@ struct Level {
 
             brick_char++;
         }
+
+        bricks_remaining = starting_bricks_remaining;
     }
 
     void updateBricks() {
-
-        breakable_bricks_count = bricks_count;
-        for (u8 i = 0; i < bricks_count; i++) if (!bricks[i].is_breakable() || bricks[i].is_broken()) breakable_bricks_count--;
-
-//        i32 new_bricks_count = bricks_count;
-//        for (i32 i = bricks_count - 1; i <= 0; i--) {
-//            Brick &brick = bricks[i];
-//            if (brick.is_broken()) { // Remove broken brick:
-//                breakable_bricks_count--;
-//                new_bricks_count--;
-//                if (i < new_bricks_count) brick = bricks[new_bricks_count];
-//            }
-//        }
-//        bricks_count = new_bricks_count;
+        bricks_remaining = bricks_count;
+        for (u8 i = 0; i < bricks_count; i++) if (!bricks[i].is_breakable() || bricks[i].is_broken()) bricks_remaining--;
     }
 
     void updateMovingBricks(float delta_time) {

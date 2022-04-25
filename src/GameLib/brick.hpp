@@ -73,9 +73,9 @@ struct BrickBase {
 
 struct Brick : BrickBase {
     static constexpr ColorID DEFAULT_MOVING_COLOR = Yellow;
-    static constexpr ColorID DEFAULT_STRONG_COLOR = Cyan;
+    static constexpr ColorID DEFAULT_STRONG_COLOR = DarkGreen;
     static constexpr ColorID DEFAULT_UNBREAKABLE_COLOR = White;
-    static constexpr ColorID DEFAULT_HIT_COLOR = Red;
+    static constexpr ColorID DEFAULT_HIT_COLOR = BrightRed;
     static constexpr char DEFAULT_HITS_TO_BREAK = 2;
     static constexpr float DEFAULT_SPEED_X = 10.0f;
 

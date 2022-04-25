@@ -117,7 +117,7 @@ protected:
                                current_level->bricks_count);
 
         current_level->updateBricks();
-        if (!current_level->breakable_bricks_count)
+        if (!current_level->bricks_remaining)
             completeLevel();
 
         paddle_controller.launch_ball = false;

@@ -2,6 +2,8 @@
 
 A Breakout clone rendered in wireframe using [SlimEngine++](https://github.com/HardCoreCodin/SlimEngineCpp) <br>
 
+<img src="Breakout.gif"><br><br>
+
 Controls:
 * Left Arrow or 'A' : Slide paddle left
 * Right Arrow or 'D' : Slide paddle right
@@ -12,6 +14,8 @@ Controls:
 When the game is paused, a perspective camra allows for f322 3D nabigation of the scene, and has 2 modes: <br>
 1. FPS navigation (WASD + mouse look + zooming)<br>
 2. DCC application (default)<br>
+
+<img src="BreakoutPause.gif"><br><br>
 
 Double clicking the `left mouse button` anywhere within the window toggles between these 2 modes.<btr>
 

@@ -1,6 +1,5 @@
 #include "./SlimEngine/draw/rectangle.h"
 #include "./SlimEngine/draw/curve.h"
-#include "./SlimEngine/draw/box.h"
 #include "./SlimEngine/draw/hud.h"
 #include "./SlimEngine/app.h"
 
@@ -27,7 +26,7 @@ struct WireBreakout : SlimEngine {
 
     // Viewport:
     Camera game_camera{
-        {0, 45, -1000 + 10},
+        {0, 48, -1000 + 10},
         {},
         20
     };
@@ -47,10 +46,12 @@ struct WireBreakout : SlimEngine {
             Green
     };
     HUD hud{hud_settings, &Lives};
+    RectI hud_rect{200, 300, 10, 35};
+    f32 hud_rect_width{(f32)(hud_rect.right - hud_rect.left)};
 
     // Scene:
-    Box box{};
-    Curve curve{ CurveType::Helix, 15};
+    Curve helix{ CurveType::Helix, 10};
+    Curve coil{ CurveType::Helix, 15};
 
     Transform transform, default_transform{};
     quat ball_orientation{quat::RotationAroundX(90*DEG_TO_RAD)};
@@ -88,14 +89,16 @@ struct WireBreakout : SlimEngine {
             // Draw Bounds:
             transform = default_transform;
             transform.position.x = level.scale.x + 1;
-            transform.position.y = transform.scale.y = level.scale.y;
-            draw(box, transform, viewport, level.bounds_color, opacity, line_width);
+            transform.position.y = level.scale.y;
+            transform.scale.x = level.scale.y;;
+            transform.rotation.setRotationAroundZ(90*DEG_TO_RAD);
+            draw(helix, transform, viewport, level.bounds_color, opacity, line_width);
             transform.position.x = -transform.position.x;
-            draw(box, transform, viewport, level.bounds_color, opacity, line_width);
+            draw(helix, transform, viewport, level.bounds_color, opacity, line_width);
             transform = default_transform;
             transform.position.y = level.scale.y * 2 + 1;
             transform.scale.x = level.scale.x + 2;
-            draw(box, transform, viewport, level.bounds_color, opacity, line_width);
+            draw(helix, transform, viewport, level.bounds_color, opacity, line_width);
 
             // Draw Level:
             transform = default_transform;
@@ -106,15 +109,14 @@ struct WireBreakout : SlimEngine {
                 transform.position.x = brick.position.x;
                 transform.position.y = brick.position.y;
                 transform.scale.x = brick.scale_x;
-                draw(box, transform, viewport, Color(brick.color_id), opacity, line_width);
+                draw(helix, transform, viewport, Color(brick.color_id), opacity, line_width);
             }
 
             // Draw Paddle:
             transform = default_transform;
-            transform.scale.y = game.paddle.scale_x;
-            transform.rotation.setRotationAroundZ(90*DEG_TO_RAD);
+            transform.scale.x = game.paddle.scale_x;
             transform.position.x = game.paddle.position.x;
-            draw(curve, transform, viewport, Color(game.paddle.color_id), opacity, line_width);
+            draw(helix, transform, viewport, Color(game.paddle.color_id), opacity, line_width);
 
             // Draw Ball:
             transform = default_transform;
@@ -122,19 +124,30 @@ struct WireBreakout : SlimEngine {
             transform.rotation = ball_orientation;
             transform.position.x = game.ball.position.x;
             transform.position.y = game.ball.position.y;
-            draw(curve, transform, viewport, Color(game.ball.color_id), opacity, line_width);
+            draw(helix, transform, viewport, Color(game.ball.color_id), opacity, line_width);
 
             // Draw HUD:
             Lives.value = (i32)game.lives;
-            Bricks.value = (i32)game.current_level->breakable_bricks_count;
+            Bricks.value = (i32)game.current_level->bricks_remaining;
             draw(hud, viewport);
+            f32 lives = (f32)game.lives / (f32)game.starting_lives;
+            RectI rect = hud_rect;
+            fill(rect, viewport, Color(BrightGrey));
+            rect.right = hud_rect.left + (i32)(lives * hud_rect_width);
+            fill(rect, viewport, Color(BrightRed));
+            f32 bricks_count = (f32)(level.starting_bricks_remaining - level.bricks_remaining) / (f32)level.starting_bricks_remaining;
+            rect = hud_rect;
+            rect.top += 35;
+            rect.bottom += 35;
+            fill(rect, viewport, Color(BrightGrey));
+            rect.right = hud_rect.left + (i32)(bricks_count * hud_rect_width);
+            fill(rect, viewport, Color(BrightGreen));
 
             if (game.is_paused) {
                 GameUI::TextBox &t = GameUI::game_paused_text;
                 t.setRelativePosition(viewport.dimensions.width, viewport.dimensions.height);
                 drawText(t.text.char_ptr, t.text_position.x, t.text_position.y, viewport, t.color, 1);
             }
-
         }
     }
     void OnWindowResize(u16 width, u16 height) override {
