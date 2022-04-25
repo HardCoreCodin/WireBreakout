@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../SlimEngine/core/ray_rectangle.h"
+//#include "../SlimEngine/core/ray_rectangle.h"
 
 #include "./ball.hpp"
 #include "./paddle.hpp"
@@ -8,9 +8,9 @@
 
 struct BallController {
     static constexpr float DEFAULT_START_POSITION_X = 0;
-    static constexpr float DEFAULT_START_POSITION_y = 30;
-    static constexpr float DEFAULT_START_VELOCITY_X = 30;
-    static constexpr float DEFAULT_START_VELOCITY_y = 30;
+    static constexpr float DEFAULT_START_POSITION_y = 50;
+    static constexpr float DEFAULT_START_VELOCITY_X = 20;
+    static constexpr float DEFAULT_START_VELOCITY_y = -25;
 
     Ball &ball;
 
@@ -47,171 +47,203 @@ struct BallController {
     }
 
     void update(float delta_time, const vec2 &game_scale, const Paddle &paddle, Brick *bricks, u8 bricks_count) {
+        Rect rect;
+        if (ball.position.y <= (paddle.rect.top + ball.radius)) {
+            rect = paddle.rect;
+            rect.left -= ball.radius;
+            rect.right += ball.radius;
+            rect.top += ball.radius;
+            if (rect[ball.position]) {
+                if (paddle.rect[ball.position]) {
+                    if (paddle.speed_x > 0) {
+                        ball.position.x = rect.right;
+                        ball.velocity.x += 0.1f * paddle.speed_x;
+                    } else {
+                        ball.position.x = rect.left;
+                        ball.velocity.x -= 0.1f * paddle.speed_x;
+                    }
+                } else {
+                    movement = ball.position - paddle.rect.clamped(ball.position);
+                    movement_distance = movement.length();
+                    if ((movement_distance < 0 ? -movement_distance : movement_distance) < 0.001f) movement_distance = 0;
+                    t_min = ball.radius - movement_distance;
+                    if (t_min > 0) {
+                        movement /= movement_distance; // normalize
+                        ball.position += movement * t_min;
+                        if (ball.position.y > paddle.position.y)
+                            ball.velocity = ball.velocity.reflectAround(movement);
+                        else {
+                            if (paddle.speed_x > 0) {
+                                ball.position.x = rect.right;
+                                ball.velocity.x += 0.1f * paddle.speed_x;
+                            } else {
+                                ball.position.x = rect.left;
+                                ball.velocity.x -= 0.1f * paddle.speed_x;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         old_position = ball.position;
         movement = ball.velocity * delta_time;
+        movement_distance = movement.length();
         new_position = old_position + movement;
 
         float x_bound = game_scale.x - ball.radius;
         float y_bound = game_scale.y * 2 - ball.radius;
-
-        Rect rect;
-        RayHitOf<vec2> closest_hit;
-        Brick *hit_brick;
+//        Rect bounds{
+//            ball.radius - game_scale.x,
+//            game_scale.x - ball.radius,
+//            game_scale.y * 2.0f - ball.radius,
+//            -20.0f
+//        };
+//        Rect rect;
+        i32 hit_brick_index;
         t_remaining = 1.0f;
         while (t_remaining) {
-            ray.origin = old_position;
-            ray.direction = new_position - old_position;
-            closest_hit.distance = INFINITY;
-            hit_brick = nullptr;
+            t_min = 1.0f;
+            hit_brick_index = -1;
 
             // Handle bounds collision (collision_position == position_x + t * movement):
             if (new_position.x >=  x_bound) {
-                ray.hit.distance = (x_bound - old_position.x) / movement.x;
-                if (ray.hit.distance < 1 &&  // No too far
-                    ray.hit.distance < closest_hit.distance) // Closer than before)
-                {
-                    closest_hit.distance = ray.hit.distance;
-                    closest_hit.position = ray[ray.hit.distance];
-                    closest_hit.normal = {-1.0f, 0};
+                f32 t = (x_bound - old_position.x) / movement.x;
+                if (t < t_min) {
+                    t_min = t;
+                    hit_normal = {-1.0f, 0};
                 }
             }
             if (new_position.x <= -x_bound) {
-                ray.hit.distance = (-x_bound - old_position.x) / movement.x;
-                if (ray.hit.distance < 1 &&  // No too far
-                    ray.hit.distance < closest_hit.distance) // Closer than before)
-                {
-                    closest_hit.distance = ray.hit.distance;
-                    closest_hit.position = ray[ray.hit.distance];
-                    closest_hit.normal = {1.0f, 0};
+                f32 t = (-x_bound - old_position.x) / movement.x;
+                if (t < t_min) {
+                    t_min = t;
+                    hit_normal = {1.0f, 0};
                 }
             }
 
             if (new_position.y >=  y_bound) {
-                ray.hit.distance = (y_bound - old_position.y) / movement.y;
-                if (ray.hit.distance < 1 &&  // No too far
-                    ray.hit.distance < closest_hit.distance) // Closer than before)
-                {
-                    closest_hit.distance = ray.hit.distance;
-                    closest_hit.position = ray[ray.hit.distance];
-                    closest_hit.normal = {0.0f, -1.0f};
+                f32 t = (y_bound - old_position.y) / movement.y;
+                if (t < t_min) {
+                    t_min = t;
+                    hit_normal = {0.0f, -1.0f};
                 }
             }
 
-            if (ball.velocity.y < 0 && new_position.y <= (1 + ball.radius)) { // Ball is approaching the paddle:
-                rect.top = paddle.rect.top + ball.radius;
-                rect.bottom = paddle.rect.bottom - ball.radius;
-                rect.right = paddle.rect.right + ball.radius;
-                rect.left = paddle.rect.left - ball.radius;
+            if (new_position.y > game_scale.y) { // Ball is around the bricks:
+                for (i32 i = 0; i < bricks_count; i++)
+                    if (!bricks[i].is_broken() &&
+                        hitBrickRect(bricks[i].rect)) hit_brick_index = i;
+            } else
+                hitBrickRect( paddle.rect);
 
-                if (rayHitRect(ray, rect) && // Hit was found
-                    ray.hit.distance < 1 &&  // No too far
-                    ray.hit.distance < closest_hit.distance) // Closer than before
-                    closest_hit = ray.hit;
-            } else if (ball.velocity.y > 0 && new_position.y > game_scale.y) { // Ball is approaching the bricks:
-                Brick *brick = bricks;
-                for (u32 i = 0; i < bricks_count; i++, brick++) {
-                    rect.top = brick->rect.top + ball.radius;
-                    rect.bottom = brick->rect.bottom - ball.radius;
-                    rect.right = brick->rect.right + ball.radius;
-                    rect.left = brick->rect.left - ball.radius;
+//            if (ball.velocity.y < 0 && new_position.y <= (1 + ball.radius)) // Ball is approaching the paddle:
+//                hitBrickRect( paddle.rect);
 
-                    if (rayHitRect(ray, rect) && // Hit was found
-                        ray.hit.distance < 1 &&  // No too far
-                        ray.hit.distance < closest_hit.distance) // Closer than before
-                    {
-                        closest_hit = ray.hit;
-                        hit_brick = brick;
-                    }
-                }
-            }
-
-            if (closest_hit.distance < INFINITY) {
-                t_remaining -= t_remaining * closest_hit.distance;
-                ball.velocity = ball.velocity.reflectAround(closest_hit.normal);
+            if (t_min == 1.0f) t_remaining = 0; else {
+                old_position += movement * t_min;
+                t_remaining -= t_remaining * t_min;
+                ball.velocity = ball.velocity.reflectAround(hit_normal);
                 movement = ball.velocity * (delta_time * t_remaining);
-                old_position = closest_hit.position;
+                movement_distance = movement.length();
                 new_position = old_position + movement;
-                if (hit_brick) hit_brick->hit();
-            } else t_remaining = 0;
+                if (hit_brick_index >= 0) bricks[hit_brick_index].hit();
+            }
         }
-//
-//        // Handle bounds collision (collision_position == position_x + t * movement):
-//        if (new_position.x >=  x_bound) _bounce(true,  ( x_bound - old_position.x) / movement.x);
-//        if (new_position.x <= -x_bound) _bounce(true,  (-x_bound - old_position.x) / movement.x);
-//        if (new_position.y >=  y_bound) _bounce(false, ( y_bound - old_position.y) / movement.y);
-//        if (new_position.y <= (1 + ball.radius) && ball.velocity.y < 0) { // Ball is approaching the paddle:
-//            if (new_position.y < -1) {
-//                // The ball is moving too fast and would tunnel through the paddle using simple collision detection.
-//                // Cast a ray instead to see where it might hit the paddle on the way:
-//                ray.origin = old_position;
-//                ray.direction = new_position - old_position;
-//                if (rayHitRect(ray, paddle.rect)) {
-//                    if (ray.hit.position.y < 1) { // Hit on the side, bounce horizontally:
-//                        if (ray.direction.x > 0) { // Moving right:
-////                            ray.hit.position_x.x - ball.radius
-//                        } else { // Moving left"
-//
-//                        }
-//                    } else { // Hit at the top, bounce vertically:
-//
-//                    }
-//                    float t = (ray.hit.position.y - old_position.y) / -ray.direction.y;
-//
-//                }
-//            } else {
-//                // Compute a position_x on the rectangle that is closes to the ball's center:
-//                ray.hit.position = paddle.rect.clamped(new_position);
-//                movement = new_position - ray.hit.position;
-//                float t = movement.length();
-//                if ((t < 0 ? -t : t) < 0.001f) t = 0;
-//                float offset = ball.radius - t;
-//                if (offset > 0) {
-//                    movement /= t; // normalize
-//                    new_position += movement * offset;
-//                    ball.velocity = ball.velocity.reflectAround(movement);
-//                }
-//            }
-//            if (resolveCollisionWith(paddle.rect))
-//                ball.velocity.x += paddle.speed_x * 0.1f;
-//        } else if (new_position.y > game_scale.y && ball.velocity.y > 0) { // Ball is approaching the bricks:
-//            for (u32 i = 0; i < bricks_count; i++) {
-//                if (resolveCollisionWith(bricks[i].rect)) bricks[i].hit();
-//            }
-//        }
+
         ball.position = new_position;
+
+
     }
 
-//    bool resolveCollisionWith(const Rect &rect) {
-//        // Compute a position_x on the rectangle that is closes to the ball's center:
-//        movement = new_position - rect.clamped(new_position);
-//        float distance = movement.length();
-//        if ((distance < 0 ? -distance : distance) < 0.001f) distance = 0;
-//        float t = ball.radius - distance;
-//        if (t > 0) {
-//            movement /= distance; // normalize
-//            new_position += movement * t;
-//            ball.velocity = ball.velocity.reflectAround(movement);
-//            return true;
-//        } else
+    bool hitPerp(f32 dx, f32 dy, f32 bottom, f32 top, f32 x, f32 &min_t) {
+        if (dx == 0.0f) return false; // Bound is parallel to direction
+        if (x == 0.0f) { // Bound is at the starting point
+            min_t = 0;
+            return true;
+        }
+//                signbit(dx) != signbit(x)  // Bound is behind
+//                (signbit(dx) ? dx < x : x < dx)
+//                )
 //            return false;
-//    }
+
+        f32 t = x / dx; if (t < 0 || t > min_t) return false;
+        f32 y = dy * t; if (y > top || y < bottom) return false;
+        min_t = t;
+
+        return true;
+    }
+
+    f32 hitRect(const Rect &rect) {
+        BoxSide side{NoSide};
+
+        f32 top    = rect.top    - old_position.y;
+        f32 bottom = rect.bottom - old_position.y;
+        f32 left   = rect.left   - old_position.x;
+        f32 right  = rect.right  - old_position.x;
+
+        f32 dx = movement.x;
+        f32 dy = movement.y;
+
+        f32 min_t = t_min;
+        if (hitPerp(dx, dy, bottom, top, left, min_t)) side = BoxSide::Left;
+        if (hitPerp(dx, dy, bottom, top, right, min_t)) side = BoxSide::Right;
+        if (hitPerp(dy, dx, left, right, top, min_t)) side = BoxSide::Top;
+        if (hitPerp(dy, dx, left, right, bottom, min_t)) side = BoxSide::Bottom;
+
+        switch (side) {
+            case BoxSide::Right: hit_normal = {1.0f, 0.0f}; return min_t;
+            case BoxSide::Left: hit_normal = {-1.0f, 0.0f}; return min_t;
+            case BoxSide::Top: hit_normal = {0.0f, 1.0f}; return min_t;
+            case BoxSide::Bottom: hit_normal = {0.0f, -1.0f}; return min_t;
+            default: return 0;
+        }
+    }
+
+    bool hitBrickRect(const Rect &brick_rect) {
+        Rect rect{
+                brick_rect.left - ball.radius,
+                brick_rect.right + ball.radius,
+                brick_rect.top + ball.radius,
+                brick_rect.bottom - ball.radius
+        };
+
+        f32 min_t = hitRect(rect);
+        if (min_t) {
+            hit_position = old_position + min_t * movement;
+            if (hit_position.y > brick_rect.top) {
+                if (hit_position.x < brick_rect.left ) return hitCorner({brick_rect.left , brick_rect.top}, min_t);
+                if (hit_position.x > brick_rect.right) return hitCorner({brick_rect.right, brick_rect.top}, min_t);
+            } else if (hit_position.y < brick_rect.bottom) {
+                if (hit_position.x < brick_rect.left ) return hitCorner({brick_rect.left,  brick_rect.bottom}, min_t);
+                if (hit_position.x > brick_rect.right) return hitCorner({brick_rect.right, brick_rect.bottom}, min_t);
+            }
+
+            t_min = min_t;
+            return true;
+        } else
+            return false;
+    }
+
+    bool hitCorner(const vec2 &C, f32 min_t) {
+        vec2 Rd = new_position - hit_position;
+        f32 remaining_distance = Rd.length();
+        Rd /= remaining_distance;
+
+        f32 t = Rd.dot(C - hit_position);
+        vec2 closest_point = hit_position + t*Rd;
+        f32 t2 = ball.radius * ball.radius - (closest_point - C).squaredLength();
+        if (t2 <= 0.0) return false;
+        f32 distance = t - sqrtf(t2);
+        if (distance <= 0) return false;
+        if (remaining_distance < distance) distance = remaining_distance;
+        t_min = min_t + distance / movement_distance;
+        hit_position += distance * Rd;
+        hit_normal = (hit_position - C).normalized();
+        return true;
+    }
 
 private:
-    RayOf<vec2> ray;
-    float t_remaining;
-    vec2 movement, old_position, new_position;
-
-//    void _bounce(bool horizontally, float t) {
-//        t_remaining -= t_remaining * t;
-//        old_position += t * movement;
-//        movement *= 1.0f - t;
-//        if (horizontally) {
-//            movement.x = -movement.x;
-//            ball.velocity.x = -ball.velocity.x;
-//        } else {
-//            movement.y = -movement.y;
-//            ball.velocity.y = -ball.velocity.y;
-//        }
-//        new_position = old_position + movement;
-//    }
+    float t_remaining, t_min, movement_distance;
+    vec2 movement, old_position, new_position, hit_position, hit_normal;
 };

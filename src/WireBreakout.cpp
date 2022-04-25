@@ -8,28 +8,39 @@
 
 struct WireBreakout : SlimEngine {
     char *map1{(char*)""
-                      "#~ -="
+                      "  ~  " "\n"
+                      "#= =#" "\n"
+                      "=~  =" "\n"
+                      "=---="
     };
     char *map2{(char*)""
-                      " ~- #" "\n"
-                      "#-~=-"
+                      "     " "\n"
+                      "#-==*" "\n"
+                      "~  -=" "\n"
+                      "=~  =" "\n"
+                      "-=~ #"
     };
-    Brick bricks[8];
-    Level level01{map2, bricks};
-    Level level02{map1, bricks};
+    Brick bricks[64];
+    Level level01{map1, bricks};
+    Level level02{map2, bricks};
     Game game{&level01, 2};
 
     // Viewport:
     Camera game_camera{
-        {0, 15, -100},
-        {15 * DEG_TO_RAD, 0, 0}
+        {0, 45, -1000},
+        {},
+        20
+    };
+    Camera default_editor_camera{
+            {0, 15, -100},
+            {15 * DEG_TO_RAD, 0, 0}
     };
     Camera editor_camera;
     Viewport viewport{window::canvas, &game_camera};
 
     // HUD:
-    HUDLine Lives{ (char*)"Lives  left: "};
-    HUDLine Bricks{(char*)"Bricks left: "};
+    HUDLine Lives{ (char*)"Lives : "};
+    HUDLine Bricks{(char*)"Bricks: "};
     HUDSettings hud_settings{
             2,
             1.2f,
@@ -39,7 +50,7 @@ struct WireBreakout : SlimEngine {
 
     // Scene:
     Box box{};
-    Curve curve{ CurveType::Coil, 1};
+    Curve curve{ CurveType::Coil, 10};
 
     Transform transform, default_transform{};
     quat ball_orientation{quat::RotationAroundX(90*DEG_TO_RAD)};
@@ -59,6 +70,7 @@ struct WireBreakout : SlimEngine {
             GameUI::Button &s = menu.start_button;
             GameUI::Button &q = menu.quit_button;
             GameUI::TextBox &t = menu.title;
+            menu.OnResize(viewport.dimensions.width, viewport.dimensions.height);
 
             window::canvas.fill(game.current_menu->background_color, 1, 0);
 
@@ -90,6 +102,7 @@ struct WireBreakout : SlimEngine {
             transform.scale.x = level.scale.x + 2;
             for (u32 i = 0; i < level.bricks_count; i++) {
                 Brick &brick = level.bricks[i];
+                if (brick.is_broken()) continue;
                 transform.position.x = brick.position.x;
                 transform.position.y = brick.position.y;
                 transform.scale.x = brick.scale_x;
@@ -114,6 +127,13 @@ struct WireBreakout : SlimEngine {
             Lives.value = (i32)game.lives;
             Bricks.value = (i32)game.current_level->breakable_bricks_count;
             draw(hud, viewport);
+
+            if (game.is_paused) {
+                GameUI::TextBox &t = GameUI::game_paused_text;
+                t.setRelativePosition(viewport.dimensions.width, viewport.dimensions.height);
+                drawText(t.text.char_ptr, t.text_position.x, t.text_position.y, viewport, t.color, 1);
+            }
+
         }
     }
     void OnWindowResize(u16 width, u16 height) override {
@@ -150,7 +170,7 @@ struct WireBreakout : SlimEngine {
         if (key == controls::key_map::space && is_pressed && !mouse::is_captured) {
             game.is_paused = !game.is_paused;
             if (game.is_paused) {
-                editor_camera = game_camera;
+                editor_camera = default_editor_camera;
                 viewport.setCamera(editor_camera);
             } else {
                 viewport.setCamera(game_camera);

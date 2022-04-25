@@ -11,14 +11,14 @@ struct Game {
     u8 current_level_index;
     u8 levels_count;
 
-    GameUI::Menu *current_menu{&GameUI::start_menu};
+    GameUI::Menu *current_menu = &GameUI::start_menu;
 
-    u8 starting_lives{30};
-    u8 lives{starting_lives};
-    bool is_paused{false};
+    u8 starting_lives = 5;
+    u8 lives = starting_lives;
+    bool is_paused = false;
 
-    Ball ball{};
-    Paddle paddle{};
+    Ball ball;
+    Paddle paddle;
 
     BallController ball_controller{ball};
     PaddleController paddle_controller{paddle};
@@ -98,7 +98,12 @@ protected:
     }
 
     void updatePlay(f32 delta_time) {
+//        Paddle old_paddle = paddle;
         paddle_controller.update(delta_time, current_level->scale.x);
+//        if (ball.position.y - ball.radius < paddle.position.y) {
+//            if ()
+//        }
+
         if (paddle_controller.launch_ball)
             ball_controller.launch(paddle_controller.launch_speed,
                                    paddle_controller.launch_area_radius,

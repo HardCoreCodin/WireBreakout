@@ -4,7 +4,7 @@
 
 struct Ball {
     static constexpr float DEFAULT_RADIUS = 1;
-    static constexpr ColorID DEFAULT_COLOR = Cyan;
+    static constexpr ColorID DEFAULT_COLOR = White;
 
     vec2 position;
     vec2 velocity;

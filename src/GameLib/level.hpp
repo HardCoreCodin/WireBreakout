@@ -8,7 +8,7 @@ struct Level {
     static constexpr ColorID DEFAULT_BOUNDS_COLOR = White;
 
     static constexpr float DEFAULT_BRICKS_PADDING = 2;
-    static constexpr float DEFAULT_TOP_PADDING = 10;
+    static constexpr float DEFAULT_TOP_PADDING = 20;
     static constexpr float DEFAULT_SIDE_PADDING = 6;
 
     static constexpr char NO_BRICK_CHAR = ' ';
@@ -90,13 +90,20 @@ struct Level {
     }
 
     void updateBricks() {
-        for (u32 i = 0; i < bricks_count; i++) {
-            Brick &brick = bricks[i];
-            if (brick.is_broken()) { // Remove broken brick:
-                breakable_bricks_count--;
-                brick = bricks[--bricks_count];
-            }
-        }
+
+        breakable_bricks_count = bricks_count;
+        for (u8 i = 0; i < bricks_count; i++) if (!bricks[i].is_breakable() || bricks[i].is_broken()) breakable_bricks_count--;
+
+//        i32 new_bricks_count = bricks_count;
+//        for (i32 i = bricks_count - 1; i <= 0; i--) {
+//            Brick &brick = bricks[i];
+//            if (brick.is_broken()) { // Remove broken brick:
+//                breakable_bricks_count--;
+//                new_bricks_count--;
+//                if (i < new_bricks_count) brick = bricks[new_bricks_count];
+//            }
+//        }
+//        bricks_count = new_bricks_count;
     }
 
     void updateMovingBricks(float delta_time) {
@@ -108,6 +115,7 @@ struct Level {
                 for (u32 j = 0; j < bricks_count; j++) {
                     if (j == i) continue;
                     Brick &other_brick = bricks[j];
+                    if (other_brick.is_broken()) continue;
                     if (brick.position.y != other_brick.position.y) continue;
 
                     float gap = 0;

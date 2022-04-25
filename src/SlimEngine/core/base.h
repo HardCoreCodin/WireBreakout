@@ -16,15 +16,15 @@
     #define COMPILER_MSVC 1
 #endif
 
-#ifndef NDEBUG
+//#ifndef NDEBUG
 #define INLINE
-#elif defined(COMPILER_MSVC)
-#define INLINE inline __forceinline
-#elif defined(COMPILER_CLANG_OR_GCC)
-    #define INLINE inline __attribute__((always_inline))
-#else
-    #define INLINE inline
-#endif
+//#elif defined(COMPILER_MSVC)
+//#define INLINE inline __forceinline
+//#elif defined(COMPILER_CLANG_OR_GCC)
+//    #define INLINE inline __attribute__((always_inline))
+//#else
+//    #define INLINE inline
+//#endif
 
 #ifdef COMPILER_CLANG
 #define ENABLE_FP_CONTRACT \

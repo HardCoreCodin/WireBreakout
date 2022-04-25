@@ -4,9 +4,9 @@
 #include "../SlimEngine/math/vec2.h"
 
 namespace GameUI {
-    static const vec2 title_offset{0.5f, 0.1f};
+    static const vec2 title_offset{0.5f, 0.3f};
     static const vec2 start_button_offset{0.5f, 0.4f};
-    static const vec2 quit_button_offset{0.5f, 0.7f};
+    static const vec2 quit_button_offset{0.5f, 0.5f};
 
     struct TextBox {
         String text{};
@@ -69,16 +69,28 @@ namespace GameUI {
         }
 
         void OnResize(u16 width, u16 height) {
+            title.setRelativePosition(width, height);
             start_button.setRelativePosition(width, height);
             quit_button.setRelativePosition(width, height);
         }
 
         void OnMouseButtonClicked(const vec2i &mouse_position) {
-            if (start_button.rect[mouse_position]) start_button.is_pressed = true;
-            if (quit_button.rect[ mouse_position]) quit_button.is_pressed = true;
+            RectI rect{start_button.rect};
+            i32 top = rect.top;
+            rect.top = rect.bottom;
+            rect.bottom = top;
+            if (rect[mouse_position]) start_button.is_pressed = true;
+
+            rect = quit_button.rect;
+            top = rect.top;
+            rect.top = rect.bottom;
+            rect.bottom = top;
+            if (rect[ mouse_position]) quit_button.is_pressed = true;
         }
     };
 
+    static TextBox game_paused_text(DEFAULT_WIDTH,DEFAULT_HEIGHT,
+                                    (char*)"Game Paused", start_button_offset);
     static Menu start_menu{
               (char*)"Breakout:", title_offset,
         (char*)"Start", start_button_offset,
