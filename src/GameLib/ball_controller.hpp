@@ -1,7 +1,5 @@
 #pragma once
 
-//#include "../SlimEngine/core/ray_rectangle.h"
-
 #include "./ball.hpp"
 #include "./paddle.hpp"
 #include "./level.hpp"
@@ -93,13 +91,7 @@ struct BallController {
 
         float x_bound = game_scale.x - ball.radius;
         float y_bound = game_scale.y * 2 - ball.radius;
-//        Rect bounds{
-//            ball.radius - game_scale.x,
-//            game_scale.x - ball.radius,
-//            game_scale.y * 2.0f - ball.radius,
-//            -20.0f
-//        };
-//        Rect rect;
+
         i32 hit_brick_index;
         t_remaining = 1.0f;
         while (t_remaining) {
@@ -137,9 +129,6 @@ struct BallController {
             } else
                 hitBrickRect( paddle.rect);
 
-//            if (ball.velocity.y < 0 && new_position.y <= (1 + ball.radius)) // Ball is approaching the paddle:
-//                hitBrickRect( paddle.rect);
-
             if (t_min == 1.0f) t_remaining = 0; else {
                 old_position += movement * t_min;
                 t_remaining -= t_remaining * t_min;
@@ -162,10 +151,6 @@ struct BallController {
             min_t = 0;
             return true;
         }
-//                signbit(dx) != signbit(x)  // Bound is behind
-//                (signbit(dx) ? dx < x : x < dx)
-//                )
-//            return false;
 
         f32 t = x / dx; if (t < 0 || t > min_t) return false;
         f32 y = dy * t; if (y > top || y < bottom) return false;

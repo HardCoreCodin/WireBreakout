@@ -547,6 +547,10 @@ namespace controls {
         u8 space{0};
         u8 tab{0};
         u8 escape{0};
+        u8 left{0};
+        u8 right{0};
+        u8 up{0};
+        u8 down{0};
     }
 
     namespace is_pressed {
@@ -556,6 +560,10 @@ namespace controls {
         bool space{false};
         bool tab{false};
         bool escape{false};
+        bool left{false};
+        bool right{false};
+        bool up{false};
+        bool down{false};
     }
 }
 

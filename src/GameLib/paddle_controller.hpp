@@ -8,9 +8,9 @@ struct PaddleController {
     static constexpr float DEFAULT_ACCELERATION = 500;
     static constexpr float DEFAULT_START_POSITION = 0;
     static constexpr float DEFAULT_START_VELOCITY = 0;
-    static constexpr char DEFAULT_MOVE_LEFT_KEY = 'Z';
-    static constexpr char DEFAULT_MOVE_RIGHT_KEY ='C';
-    static constexpr char DEFAULT_LAUNCH_RIGHT_KEY ='X';
+    static constexpr char DEFAULT_MOVE_LEFT_KEY = 'A';
+    static constexpr char DEFAULT_MOVE_RIGHT_KEY ='D';
+    static constexpr char DEFAULT_LAUNCH_RIGHT_KEY = 'W';
     static constexpr float DEFAULT_LAUNCH_SPEED = 20;
     static constexpr float DEFAULT_LAUNCH_AREA_RADIUS = 7;
 
@@ -71,9 +71,8 @@ struct PaddleController {
     }
 
     void OnKeyChange(u8 key, bool is_pressed) {
-        if (key == move_left_key ) move_left  = is_pressed;
-        if (key == move_right_key) move_right = is_pressed;
-        if (key == move_right_key) move_right = is_pressed;
-        if (key == launch_ball_key) launch_ball = true;
+        if (key == controls::key_map::left  || key == move_left_key ) move_left  = is_pressed;
+        if (key == controls::key_map::right || key == move_right_key) move_right = is_pressed;
+        if (key == controls::key_map::up    || key == launch_ball_key) launch_ball = true;
     }
 };

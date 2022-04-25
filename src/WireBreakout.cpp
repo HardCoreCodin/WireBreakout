@@ -27,7 +27,7 @@ struct WireBreakout : SlimEngine {
 
     // Viewport:
     Camera game_camera{
-        {0, 45, -1000},
+        {0, 45, -1000 + 10},
         {},
         20
     };
@@ -50,7 +50,7 @@ struct WireBreakout : SlimEngine {
 
     // Scene:
     Box box{};
-    Curve curve{ CurveType::Coil, 10};
+    Curve curve{ CurveType::Helix, 15};
 
     Transform transform, default_transform{};
     quat ball_orientation{quat::RotationAroundX(90*DEG_TO_RAD)};
@@ -111,9 +111,10 @@ struct WireBreakout : SlimEngine {
 
             // Draw Paddle:
             transform = default_transform;
-            transform.scale.x = game.paddle.scale_x;
+            transform.scale.y = game.paddle.scale_x;
+            transform.rotation.setRotationAroundZ(90*DEG_TO_RAD);
             transform.position.x = game.paddle.position.x;
-            draw(box, transform, viewport, Color(game.paddle.color_id), opacity, line_width);
+            draw(curve, transform, viewport, Color(game.paddle.color_id), opacity, line_width);
 
             // Draw Ball:
             transform = default_transform;
