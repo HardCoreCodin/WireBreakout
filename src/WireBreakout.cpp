@@ -26,7 +26,7 @@ struct WireBreakout : SlimEngine {
 
     // Viewport:
     Camera game_camera{
-        {0, 48, -1000 + 10},
+        {0, 48, -1000},
         {},
         20
     };
@@ -63,6 +63,8 @@ struct WireBreakout : SlimEngine {
     WireBreakout() {
         viewport.navigation.settings.max_velocity *= 10;
         viewport.navigation.settings.acceleration *= 10;
+        viewport.frustum.projection.type = Frustum::ProjectionType::Orthographic;
+        viewport.updateProjection();
     }
 
     void OnRender() override {
@@ -185,8 +187,10 @@ struct WireBreakout : SlimEngine {
             game.is_paused = !game.is_paused;
             if (game.is_paused) {
                 editor_camera = default_editor_camera;
+                viewport.frustum.projection.type = Frustum::ProjectionType::PerspectiveGL;
                 viewport.setCamera(editor_camera);
             } else {
+                viewport.frustum.projection.type = Frustum::ProjectionType::Orthographic;
                 viewport.setCamera(game_camera);
             }
         }

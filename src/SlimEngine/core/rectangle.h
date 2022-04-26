@@ -2,49 +2,41 @@
 
 #include "../math/vec2.h"
 
-template<class VectorType, typename scalar_type>
-struct RectOf {
+struct Rect {
     union {
         struct {
-            VectorType top_left;
-            VectorType bottom_right;
+            vec2 top_left;
+            vec2 bottom_right;
         };
         struct {
-            scalar_type left;
-            scalar_type top;
-            scalar_type right;
-            scalar_type bottom;
+            f32 left;
+            f32 top;
+            f32 right;
+            f32 bottom;
         };
     };
 
-    RectOf() : RectOf{(scalar_type)0, (scalar_type)0, (scalar_type)0, (scalar_type)0} {}
-    RectOf(const RectOf &other) : RectOf{other.top_left, other.bottom_right} {}
-    RectOf(const VectorType &top_left,
-           const VectorType &bottom_right) :
-            top_left{top_left},
-            bottom_right{bottom_right} {}
-    RectOf(scalar_type left, scalar_type right, scalar_type top, scalar_type bottom) :
-            left{left}, top{top}, right{right}, bottom{bottom} {}
+    Rect() : Rect{0, 0, 0, 0} {}
+    Rect(const Rect &other) : Rect{other.top_left, other.bottom_right} {}
+    Rect(const vec2 &top_left, const vec2 &bottom_right) : top_left{top_left}, bottom_right{bottom_right} {}
+    Rect(f32 left, f32 right, f32 top, f32 bottom) : left{left}, top{top}, right{right}, bottom{bottom} {}
 
-    INLINE bool contains(const VectorType &pos) const {
-        return pos.x >= left &&
-               pos.x <= right &&
-               pos.y >= bottom &&
-               pos.y <= top;
+    INLINE bool contains(const vec2 &pos) const {
+        return left <= pos.x && pos.x <= right &&
+               bottom <=  pos.y && pos.y <= top;
     }
 
-    INLINE bool bounds(const VectorType &pos) const {
-        return pos.x > left &&
-               pos.x < right &&
-               pos.y > bottom &&
-               pos.y < top;
+    INLINE bool bounds(const vec2 &pos) const {
+        return left < pos.x && pos.x < right &&
+               bottom < pos.y && pos.y < top;
     }
 
     INLINE bool is_zero() const {
-        return left == right && top == bottom;
+        return left == right &&
+               top == bottom;
     }
 
-    INLINE VectorType clamped(const VectorType &vec) const {
+    INLINE vec2 clamped(const vec2 &vec) const {
         return vec.clamped({left, bottom}, {right, top});
     }
 
@@ -52,14 +44,59 @@ struct RectOf {
         return is_zero();
     }
 
-    INLINE bool operator [] (const VectorType &pos) const {
+    INLINE bool operator [] (const vec2 &pos) const {
         return contains(pos);
     }
 
-    INLINE bool operator () (const VectorType &pos) const {
+    INLINE bool operator () (const vec2 &pos) const {
         return bounds(pos);
     }
 };
 
-using Rect = RectOf<vec2, f32>;
-using RectI = RectOf<vec2i, i32>;
+
+struct RectI {
+    union {
+        struct {
+            vec2i top_left;
+            vec2i bottom_right;
+        };
+        struct {
+            i32 left;
+            i32 top;
+            i32 right;
+            i32 bottom;
+        };
+    };
+
+    RectI() : RectI{0, 0, 0, 0} {}
+    RectI(const RectI &other) : RectI{other.top_left, other.bottom_right} {}
+    RectI(const vec2i &top_left, const vec2i &bottom_right) : top_left{top_left}, bottom_right{bottom_right} {}
+    RectI(i32 left, i32 right, i32 top, i32 bottom) : left{left}, top{top}, right{right}, bottom{bottom} {}
+
+    INLINE bool contains(const vec2i &pos) const {
+        return left <= pos.x && pos.x <= right &&
+               bottom <=  pos.y && pos.y <= top;
+    }
+
+    INLINE bool bounds(const vec2i &pos) const {
+        return left < pos.x && pos.x < right &&
+               bottom < pos.y && pos.y < top;
+    }
+
+    INLINE bool is_zero() const {
+        return left == right &&
+               top == bottom;
+    }
+
+    INLINE bool operator ! () const {
+        return is_zero();
+    }
+
+    INLINE bool operator [] (const vec2i &pos) const {
+        return contains(pos);
+    }
+
+    INLINE bool operator () (const vec2i &pos) const {
+        return bounds(pos);
+    }
+};
