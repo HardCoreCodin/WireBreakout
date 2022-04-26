@@ -1,6 +1,14 @@
 # WireBreakout
 
 A Breakout clone rendered in wireframe using [SlimEngine++](https://github.com/HardCoreCodin/SlimEngineCpp) <br>
+GameLib holds the game itself, decoupled from the engine or platform.<br>
+It just exposes an API so can be hosted inside any engine <br>
+It is all written from scratch in C++ with no dependencies so the executable is only 53Kb.<br>
+It is essentially 2D as there is no notion of depth, so could be rendered in a 2D engine. <br>
+It is rendered here in software in 3D using an orthographic projection while playing the game. <br>
+Though the level can be navigated in 3D with a perspective camera when the game is paused.<br>
+There is no editor so level maps are specified in ASCII form as a string. <br>
+It has robust collision response using a few approaches including a Minkowski Sum of Rectangle/Circle.<br>
 
 <img src="Breakout.gif"><br><br>
 
