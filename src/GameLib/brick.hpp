@@ -33,6 +33,8 @@ struct BrickBase {
         rect.bottom = position.y - 1;
     }
 
+    // Slide rick horizontally, flipping direction when the level's sides are hit
+    // Note: This is used for both the paddle movement and sliding bricks
     void update(float delta_time, float level_bound_x, bool flip_direction = false) {
         level_bound_x -= scale_x;
         float movement = speed_x * delta_time;

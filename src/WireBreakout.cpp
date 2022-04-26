@@ -6,6 +6,7 @@
 #include "./GameLib/game.hpp"
 
 struct WireBreakout : SlimEngine {
+    // Maps/Levels for the game:
     char *map1{(char*)""
                       "  ~  " "\n"
                       "#= =#" "\n"
@@ -19,12 +20,16 @@ struct WireBreakout : SlimEngine {
                       "=~  =" "\n"
                       "-=~ #"
     };
+
+    // Statically sized buffer for the bricks
     Brick bricks[64];
+
     Level level01{map1, bricks};
     Level level02{map2, bricks};
+
     Game game{&level01, 2};
 
-    // Viewport:
+    // Viewport and Cameras:
     Camera game_camera{
         {0, 48, -1000},
         {},
@@ -46,13 +51,12 @@ struct WireBreakout : SlimEngine {
             Green
     };
     HUD hud{hud_settings, &Lives};
-    RectI hud_rect{200, 300, 10, 35};
-    f32 hud_rect_width{(f32)(hud_rect.right - hud_rect.left)};
+    RectI progress_bar{200, 300, 10, 35};
+    const f32 progress_bar_width{(f32)(progress_bar.right - progress_bar.left)};
+    const i32 progress_bar_padding = 35;
 
     // Scene:
     Curve helix{ CurveType::Helix, 10};
-    Curve coil{ CurveType::Helix, 15};
-
     Transform transform, default_transform{};
     quat ball_orientation{quat::RotationAroundX(90*DEG_TO_RAD)};
 
@@ -73,9 +77,10 @@ struct WireBreakout : SlimEngine {
             GameUI::Button &s = menu.start_button;
             GameUI::Button &q = menu.quit_button;
             GameUI::TextBox &t = menu.title;
-            menu.OnResize(viewport.dimensions.width, viewport.dimensions.height);
+            menu.OnResize(viewport.dimensions.width,
+                          viewport.dimensions.height);
 
-            window::canvas.fill(game.current_menu->background_color, 1, 0);
+            window::canvas.fill(menu.background_color, 1, 0);
 
             fill(s.rect, viewport, s.background_color);
             fill(q.rect, viewport, q.background_color);
@@ -132,22 +137,25 @@ struct WireBreakout : SlimEngine {
             Lives.value = (i32)game.lives;
             Bricks.value = (i32)game.current_level->bricks_remaining;
             draw(hud, viewport);
+
+            // Draw Progress Bars:
             f32 lives = (f32)game.lives / (f32)game.starting_lives;
-            RectI rect = hud_rect;
+            RectI rect = progress_bar;
             fill(rect, viewport, Color(BrightGrey));
-            rect.right = hud_rect.left + (i32)(lives * hud_rect_width);
+            rect.right = progress_bar.left + (i32)(lives * progress_bar_width);
             fill(rect, viewport, Color(BrightRed));
             f32 bricks_count = (f32)(level.starting_bricks_remaining - level.bricks_remaining) / (f32)level.starting_bricks_remaining;
-            rect = hud_rect;
-            rect.top += 35;
-            rect.bottom += 35;
+            rect = progress_bar;
+            rect.top += progress_bar_padding;
+            rect.bottom += progress_bar_padding;
             fill(rect, viewport, Color(BrightGrey));
-            rect.right = hud_rect.left + (i32)(bricks_count * hud_rect_width);
+            rect.right = progress_bar.left + (i32)(bricks_count * progress_bar_width);
             fill(rect, viewport, Color(BrightGreen));
 
-            if (game.is_paused) {
+            if (game.is_paused) { // Draw game paused title
                 GameUI::TextBox &t = GameUI::game_paused_text;
-                t.setRelativePosition(viewport.dimensions.width, viewport.dimensions.height);
+                t.setRelativePosition(viewport.dimensions.width,
+                                      viewport.dimensions.height);
                 drawText(t.text.char_ptr, t.text_position.x, t.text_position.y, viewport, t.color, 1);
             }
         }
@@ -162,15 +170,16 @@ struct WireBreakout : SlimEngine {
         else
             game.OnUpdate(delta_time);
     }
+
     void OnMouseButtonDown(mouse::Button &mouse_button) override {
         mouse::pos_raw_diff_x = mouse::pos_raw_diff_y = 0;
-        if (&mouse_button == &mouse::left_button) {
-            vec2i mouse_position{mouse::pos_x, mouse::pos_y};
-            if (!game.OnMouseButtonClicked(mouse_position))
-                is_running = false;
-        }
+        if (&mouse_button == &mouse::left_button &&
+            !game.OnMouseButtonClicked({mouse::pos_x, mouse::pos_y}))
+            is_running = false; // Quit the game if the quit button was clicked
     }
+
     void OnMouseButtonDoubleClicked(mouse::Button &mouse_button) override {
+        // Toggle between FPS-style and DCC-style navigation while the game is pauses:
         if (game.is_paused && &mouse_button == &mouse::left_button) {
             mouse::is_captured = !mouse::is_captured;
             os::setCursorVisibility(!mouse::is_captured);
@@ -184,6 +193,7 @@ struct WireBreakout : SlimEngine {
             return;
         }
         if (key == controls::key_map::space && is_pressed && !mouse::is_captured) {
+            // Toggle game pausing mode, switching cameras and projection types:
             game.is_paused = !game.is_paused;
             if (game.is_paused) {
                 editor_camera = default_editor_camera;
@@ -194,7 +204,7 @@ struct WireBreakout : SlimEngine {
                 viewport.setCamera(game_camera);
             }
         }
-        if (game.is_paused) {
+        if (game.is_paused) { // Capture keyboard input for camera navigation (while game is paused)
             NavigationMove &move = viewport.navigation.move;
             NavigationTurn &turn = viewport.navigation.turn;
             if (key == 'Q') turn.left     = is_pressed;
@@ -205,7 +215,7 @@ struct WireBreakout : SlimEngine {
             if (key == 'S') move.backward = is_pressed;
             if (key == 'A') move.left     = is_pressed;
             if (key == 'D') move.right    = is_pressed;
-        } else
+        } else // Delegate keyboard input handling to the game:
             game.OnKeyChanged(key, is_pressed);
     }
 };

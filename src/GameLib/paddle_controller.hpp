@@ -11,7 +11,7 @@ struct PaddleController {
     static constexpr char DEFAULT_MOVE_LEFT_KEY = 'A';
     static constexpr char DEFAULT_MOVE_RIGHT_KEY ='D';
     static constexpr char DEFAULT_LAUNCH_RIGHT_KEY = 'W';
-    static constexpr float DEFAULT_LAUNCH_SPEED = 20;
+    static constexpr float DEFAULT_LAUNCH_SPEED = 40;
     static constexpr float DEFAULT_LAUNCH_AREA_RADIUS = 7;
 
     Paddle &paddle;

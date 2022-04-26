@@ -23,6 +23,8 @@ struct Game {
     BallController ball_controller{ball};
     PaddleController paddle_controller{paddle};
 
+    static constexpr f32 DEATH_BOUND = -2.0f;
+
     Game(Level *levels, u8 levels_count) :
         levels{levels},
         current_level{levels},
@@ -98,12 +100,7 @@ protected:
     }
 
     void updatePlay(f32 delta_time) {
-//        Paddle old_paddle = paddle;
         paddle_controller.update(delta_time, current_level->scale.x);
-//        if (ball.position.y - ball.radius < paddle.position.y) {
-//            if ()
-//        }
-
         if (paddle_controller.launch_ball)
             ball_controller.launch(paddle_controller.launch_speed,
                                    paddle_controller.launch_area_radius,
@@ -121,6 +118,6 @@ protected:
             completeLevel();
 
         paddle_controller.launch_ball = false;
-        if (ball.position.y < -5) die();
+        if (ball.position.y < DEATH_BOUND) die();
     }
 };

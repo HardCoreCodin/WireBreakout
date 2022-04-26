@@ -102,6 +102,8 @@ struct Level {
             if (brick.is_movable()) {
                 brick.update(delta_time, scale.x, true);
 
+                // After moving the brick and handling collisions with the sides of the level,
+                // check also against other bricks and also flip direction on-hit:
                 for (u32 j = 0; j < bricks_count; j++) {
                     if (j == i) continue;
                     Brick &other_brick = bricks[j];
